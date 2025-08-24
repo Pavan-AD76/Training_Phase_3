@@ -81,7 +81,7 @@ options.add_argument("--disable-dev-shm-usage")
 options.add_argument("--disable-gpu")
 options.add_argument("--disable-software-rasterizer")
 options.add_argument("--remote-debugging-port=9222")
-options.add_argument("--user-data-dir=/tmp/chrome-data")  # unique profile dir
+options.add_argument("/tmp/chrome-data")  # unique profile dir
 
 driver = webdriver.Chrome(options=options)
 
@@ -211,4 +211,5 @@ df.to_csv("remoteok_jobs_output.csv", index=False)
 print(f"Scraping completed. {len(df)} jobs saved to remoteok_jobs.csv")
 
 driver.quit()
+
 
