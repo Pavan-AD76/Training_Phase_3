@@ -75,15 +75,19 @@ from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 
 options = Options()
-options.add_argument("--headless")
+options.add_argument("--headless") 
 options.add_argument("--no-sandbox")
 options.add_argument("--disable-dev-shm-usage")
 options.add_argument("--disable-gpu")
 options.add_argument("--disable-software-rasterizer")
 options.add_argument("--remote-debugging-port=9222")
-options.add_argument("/tmp/chrome-data")  # unique profile dir
+
+import tempfile
+temp_dir = tempfile.mkdtemp()
+options.add_argument(f"--user-data-dir={temp_dir}")
 
 driver = webdriver.Chrome(options=options)
+
 
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
@@ -97,7 +101,6 @@ import pandas as pd
 import time
 
 
-# ----------------- Department Mapping Loader -----------------
 def load_keyword_mapping(filepath):
     """Load department-keyword mapping from the tab-delimited file."""
     df = pd.read_csv(filepath, sep="\t")  # file is tab-delimited
@@ -126,20 +129,17 @@ def assign_departments(df, keyword_file):
         lambda row: match_department(row["Job Title"], row["Tags"]), axis=1
     )
     return df
-# --------------------------------------------------------------
 
-# Configure Selenium
 options = Options()
 options.add_argument("--start-maximized")
 options.add_argument("--disable-blink-features=AutomationControlled")
 service = Service(ChromeDriverManager().install())
 driver = webdriver.Chrome(service=service, options=options)
 
-# Step 1: Go to RemoteOK jobs page
+
 driver.get("https://remoteok.com/")
 WebDriverWait(driver, 10).until(EC.presence_of_all_elements_located((By.CSS_SELECTOR, "tr.job")))
 
-# Step 2: Scroll to load more jobs (optional)
 for _ in range(3):
     driver.find_element(By.TAG_NAME, "body").send_keys(Keys.END)
     time.sleep(2)
@@ -148,7 +148,7 @@ import time
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 
-# Keep scrolling until no new jobs appear
+
 prev_count = 0
 while True:
     driver.find_element(By.TAG_NAME, "body").send_keys(Keys.END)
@@ -161,7 +161,6 @@ while True:
 print(f"Total jobs loaded: {len(job_cards)}")
 
 
-# Step 3: Scrape job data
 titles, companies, locations, tags, dates = [], [], [], [], []
 job_cards = driver.find_elements(By.CSS_SELECTOR, "tr.job")
 
@@ -194,7 +193,7 @@ for card in job_cards:
     tags.append(tags_str)
     dates.append(date_posted)
 
-# Step 4: Save to CSV with Department
+
 df = pd.DataFrame({
     "Job Title": titles,
     "Company": companies,
@@ -203,7 +202,7 @@ df = pd.DataFrame({
     "Date Posted": dates
 })
 
-# 🔑 Enrich with departments
+
 df = assign_departments(df, "department_keywords.xls")
 
 df.to_csv("remoteok_jobs_output.csv", index=False)
@@ -211,5 +210,6 @@ df.to_csv("remoteok_jobs_output.csv", index=False)
 print(f"Scraping completed. {len(df)} jobs saved to remoteok_jobs.csv")
 
 driver.quit()
+
 
 
